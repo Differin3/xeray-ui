@@ -29,8 +29,12 @@ RUN chown -R www-data:www-data /var/www/html
 # Symlink /api to backend/api so frontend requests to /api/* resolve
 RUN ln -s /var/www/html/backend/api /var/www/html/api || true
 
+# Copy entrypoint
+COPY scripts/xeray-entrypoint.sh /usr/local/bin/xeray-entrypoint
+RUN chmod +x /usr/local/bin/xeray-entrypoint
+
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -fsS http://localhost/ || exit 1
 
-CMD ["apache2-foreground"]
+ENTRYPOINT ["/usr/local/bin/xeray-entrypoint"]

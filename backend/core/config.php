@@ -56,14 +56,19 @@ function getDbConnection() {
 
 // Функция для логирования
 function logMessage($level, $message) {
-    $logFile = LOG_PATH . '/' . date('Y-m-d') . '.log';
+    $logDir = LOG_PATH;
+    $logFile = $logDir . '/' . date('Y-m-d') . '.log';
     $logMessage = date('Y-m-d H:i:s') . " [$level] $message" . PHP_EOL;
 
-    if (!file_exists(LOG_PATH)) {
-        mkdir(LOG_PATH, 0755, true);
+    // Пытаемся создать каталог
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
     }
 
-    file_put_contents($logFile, $logMessage, FILE_APPEND);
+    // Пишем в файл, при ошибке — в error_log
+    if (@file_put_contents($logFile, $logMessage, FILE_APPEND) === false) {
+        error_log($logMessage);
+    }
 }
 
 // Функция для безопасного вывода данных
