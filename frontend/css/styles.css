@@ -252,3 +252,10 @@ body {
         width: calc(100% - 70px);
     }
 }
+
+/* Tables - dark theme fixes */
+.table { background-color: var(--bg-2); color: var(--text-1); }
+.table thead th { background-color: var(--bg-3); color: var(--text-1); border-color: var(--card-border); }
+.table tbody tr { background-color: var(--bg-2); border-color: var(--card-border); }
+.table tbody tr:nth-child(even) { background-color: var(--bg-1); }
+.table > :not(caption) > * > * { background-color: transparent; color: var(--text-1); border-color: var(--card-border); }

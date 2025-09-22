@@ -22,6 +22,8 @@ if ($config['debug']) {
 
 // Include database connection
 require_once 'backend/core/database.php';
+// Include auth helpers
+require_once 'backend/core/auth.php';
 
 // Include API functions
 require_once 'backend/core/api_functions.php';
@@ -31,9 +33,39 @@ $section = $_GET['section'] ?? 'overview';
 $action = $_GET['action'] ?? 'index';
 
 // Valid sections
-$valid_sections = ['overview', 'servers', 'users', 'stats', 'inbounds', 'outbounds', 'routing', 'settings'];
+$valid_sections = ['overview', 'servers', 'users', 'stats', 'inbounds', 'outbounds', 'routing', 'settings', 'login'];
 if (!in_array($section, $valid_sections)) {
     $section = 'overview';
+}
+
+// Auth routes
+if ($section === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
+    $csrf = $_POST['csrf'] ?? '';
+    if (function_exists('verifyCsrfToken') && !verifyCsrfToken($csrf)) {
+        $_SESSION['error'] = 'Неверный CSRF токен';
+        header('Location: ?section=login');
+        exit;
+    }
+    if (authLogin($username, $password)) {
+        header('Location: ?section=overview');
+        exit;
+    }
+    $_SESSION['error'] = 'Неверный логин или пароль';
+    header('Location: ?section=login');
+    exit;
+}
+if ($action === 'logout') {
+    authLogout();
+    header('Location: ?section=login');
+    exit;
+}
+
+// If not logged in, show login page for any protected section
+$protected_sections = ['overview', 'servers', 'users', 'stats', 'inbounds', 'outbounds', 'routing', 'settings'];
+if (!isset($_SESSION['user_id']) && in_array($section, $protected_sections)) {
+    $section = 'login';
 }
 
 // Handle AJAX requests
@@ -42,9 +74,35 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     exit;
 }
 
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle form submissions (non-auth)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $section !== 'login') {
     handleFormSubmission($section, $action);
+}
+
+// If rendering login page, do minimal layout
+if ($section === 'login') {
+    $success_message = $_SESSION['success'] ?? null;
+    $error_message = $_SESSION['error'] ?? null;
+    if ($success_message) { unset($_SESSION['success']); }
+    if ($error_message) { /* keep for component */ }
+    ?>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $config['app_name']; ?> — Вход</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="frontend/css/styles.css">
+</head>
+<body>
+<?php include 'frontend/components/login.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+<?php
+    exit;
 }
 
 // Load data from API functions
@@ -98,12 +156,17 @@ if ($error_message) {
             <div class="collapse navbar-collapse" id="navbarContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" href="?section=overview"><i class="fas fa-tachometer-alt"></i> Панель управления</a>
+                        <a class="nav-link <?php echo $section === 'overview' ? 'active' : ''; ?>" href="?section=overview"><i class="fas fa-tachometer-alt"></i> Панель управления</a>
                     </li>
                 </ul>
-                <div class="d-flex">
-                    <button class="btn btn-outline-primary me-2" id="refreshBtn"><i class="fas fa-sync-alt"></i></button>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServerModal"><i class="fas fa-plus"></i> Добавить сервер</button>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small d-none d-md-inline">
+                        <i class="fas fa-user-circle"></i>
+                        <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
+                    </span>
+                    <a class="btn btn-outline-secondary" href="?action=logout"><i class="fas fa-sign-out-alt"></i></a>
+                    <button class="btn btn-outline-primary d-none d-md-inline" id="refreshBtn"><i class="fas fa-sync-alt"></i></button>
+                    <button class="btn btn-primary d-none d-md-inline" data-bs-toggle="modal" data-bs-target="#addServerModal"><i class="fas fa-plus"></i> Добавить сервер</button>
                 </div>
             </div>
         </div>
@@ -154,7 +217,7 @@ if ($error_message) {
                     </a>
                 </li>
                 <li class="nav-item mt-4">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link" href="?action=logout">
                         <i class="fas fa-sign-out-alt"></i> <span>Выход</span>
                     </a>
                 </li>
