@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  xeray-ui:
+    build: .
+    container_name: xeray-ui
+    ports:
+      - "8080:80"
+    volumes:
+      - ./logs:/var/www/html/logs
+      - ./database:/var/www/html/database
+    restart: unless-stopped

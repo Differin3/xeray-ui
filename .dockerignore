@@ -1,0 +1,13 @@
+.git
+.gitignore
+.vscode
+node_modules
+logs
+logs/*
+database
+*.log
+*.tmp
+*.swp
+Dockerfile
+scripts/deploy.ps1
+scripts/deploy.sh
