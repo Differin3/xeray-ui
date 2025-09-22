@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XRay Control Panel - Xeray UI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="../frontend/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Навбар -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-tachometer-alt"></i> Панель управления</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <button class="btn btn-outline-primary me-2" id="refreshBtn"><i class="fas fa-sync-alt"></i></button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServerModal"><i class="fas fa-plus"></i> Добавить сервер</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Сайдбар -->
+    <div class="sidebar d-md-block">
+        <div class="position-sticky">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#overview">
+                        <i class="fas fa-home"></i> <span>Обзор</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#servers">
+                        <i class="fas fa-server"></i> <span>Серверы</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#inbounds">
+                        <i class="fas fa-plug"></i> <span>Inbounds</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#outbounds">
+                        <i class="fas fa-share-alt"></i> <span>Outbounds</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#routing">
+                        <i class="fas fa-route"></i> <span>Маршрутизация</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#users">
+                        <i class="fas fa-users"></i> <span>Пользователи</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#stats">
+                        <i class="fas fa-chart-line"></i> <span>Статистика</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#settings">
+                        <i class="fas fa-cog"></i> <span>Настройки</span>
+                    </a>
+                </li>
+                <li class="nav-item mt-4">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-sign-out-alt"></i> <span>Выход</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="main-content">
+        <div class="container-fluid">
+            <!-- Обзорная панель -->
+            <div id="overview" class="content-section">
+                <h2 class="mb-4">Обзор системы</h2>
+
+                <!-- Статистика -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <i class="fas fa-server"></i>
+                            <h2>0</h2>
+                            <p>Серверов</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <i class="fas fa-plug"></i>
+                            <h2>0</h2>
+                            <p>Inbounds</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <i class="fas fa-users"></i>
+                            <h2>0</h2>
+                            <p>Пользователей</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <i class="fas fa-network-wired"></i>
+                            <h2>0 GB</h2>
+                            <p>Трафика</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Карта сети и серверы -->
+                <div class="row mt-4">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-network-wired"></i> Карта сети</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="networkCanvas"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-server"></i> Статус серверов</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="serverStatusList">
+                                    <p class="text-muted">Нет добавленных серверов</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Логи -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-terminal"></i> Системные логи</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="systemLogs" class="log-entries">
+                                    <div class="log-entry info">
+                                        <span>[--:--:--]</span> Система готова к работе
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Другие разделы (скрыты по умолчанию) -->
+            <div id="servers" class="content-section" style="display: none;">
+                <h2 class="mb-4">Управление серверами</h2>
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-server"></i> Список серверов</h5>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addServerModal"><i class="fas fa-plus"></i> Добавить</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Имя</th>
+                                        <th>Локация</th>
+                                        <th>Статус</th>
+                                        <th>IP Адрес</th>
+                                        <th>Порты</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="serversTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center">Нет добавленных серверов</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="users" class="content-section" style="display: none;">
+                <h2 class="mb-4">Управление пользователями</h2>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0"><i class="fas fa-users"></i> Список пользователей</h5>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="fas fa-plus"></i> Добавить</button>
+                            </div>
+                            <div class="card-body">
+                                <div class="user-list">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Имя</th>
+                                                <th>Email</th>
+                                                <th>Трафик</th>
+                                                <th>Статус</th>
+                                                <th>Действия</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="usersTableBody">
+                                            <tr>
+                                                <td colspan="6" class="text-center">Нет добавленных пользователей</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-chart-pie"></i> Распределение трафика</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="trafficChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stats" class="content-section" style="display: none;">
+                <h2 class="mb-4">Статистика и аналитика</h2>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-chart-line"></i> Использование трафика</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="usageChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-list"></i> Топ протоколов</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="protocolChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-server"></i> Нагрузка на серверы</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="loadChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-globe"></i> География запросов</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="geoChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <div class="modal fade" id="addServerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавление сервера</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addServerForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Название сервера</label>
+                                    <input type="text" class="form-control" id="serverName" placeholder="Server-1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Локация</label>
+                                    <select class="form-select" id="serverLocation" required>
+                                        <option value="">Выберите локацию</option>
+                                        <option value="nl">Нидерланды</option>
+                                        <option value="de">Германия</option>
+                                        <option value="us">США</option>
+                                        <option value="gb">Великобритания</option>
+                                        <option value="fr">Франция</option>
+                                        <option value="jp">Япония</option>
+                                        <option value="sg">Сингапур</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">IP Адрес</label>
+                                    <input type="text" class="form-control" id="serverIp" placeholder="192.168.1.100" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Порт SSH</label>
+                                    <input type="number" class="form-control" id="serverSshPort" value="22" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Пользователь SSH</label>
+                            <input type="text" class="form-control" id="serverSshUser" placeholder="root" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ключ доступа</label>
+                            <textarea class="form-control" id="serverSshKey" rows="4" placeholder="SSH private key"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Пароль SSH</label>
+                            <input type="password" class="form-control" id="serverSshPassword" placeholder="SSH password">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="saveServerBtn">Добавить сервер</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавление пользователя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="mb-3">
+                            <label class="form-label">Имя</label>
+                            <input type="text" class="form-control" id="userName" placeholder="Иван Петров" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="userEmail" placeholder="user@example.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Лимит трафика (GB)</label>
+                            <input type="number" class="form-control" id="userTrafficLimit" value="50" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Срок действия</label>
+                            <input type="date" class="form-control" id="userExpireDate">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="saveUserBtn">Добавить пользователя</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
+    <script src="../frontend/js/api.js"></script>
+    <script src="../frontend/js/main.js"></script>
+</body>
+</html>
